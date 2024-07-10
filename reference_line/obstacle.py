@@ -8,15 +8,16 @@ import utils
 
 class Obstacle:
   id = 0
-  def __init__(self, x=0.0, y=0.0, theta=0.0, v=0.0, a=0.0):
+  def __init__(self, x=0.0, y=0.0, theta=0.0, v=0.0, a=0.0, width=2.0, length=5.0):
     self.id = self._generate_id()
     self.position = geo.Vec2d(x, y)
     self.theta = theta
     self.v = v
     self.a = a
-    self.length = 5.0
-    self.width = 2.0
+    self.length = length
+    self.width = width
     self.trajectory = Trajectory()
+    self.box = geo.Box2d(x, y, theta, self.width, self.length)
 
   def _generate_id(self):
     Obstacle.id += 1
@@ -25,6 +26,16 @@ class Obstacle:
 
   def get_trajectory(self):
     return self.trajectory
+  
+  def get_all_corners(self):
+    return self.box.corners()
+  
+  def get_point_at_time(self, time):
+    return self.trajectory.get_point_at_time(time)
+
+  def get_bounding_box(self, path_point):
+    return geo.Box2d(path_point.position.x, path_point.position.y, path_point.theta,
+                     self.width, self.length)
 
 def test():
   from reference_line import ReferenceLine

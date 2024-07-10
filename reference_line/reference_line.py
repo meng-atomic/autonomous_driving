@@ -6,7 +6,7 @@ import bezier
 from scipy import interpolate
 
 import common.geometry as geo
-from common.trajectory import PathPoint, TrajectoryPoint, Trajectory
+from common.trajectory import PathPoint, Path, TrajectoryPoint, Trajectory
 import utils
 
 class ReferenceLineInfo:
@@ -92,7 +92,7 @@ class ReferenceLine:
     vec1 = next_point.position - prev_point.position
     delta_s = vec0.dot(vec1) / vec1.norm()
     target_s = prev_point.s + delta_s
-    return utils.get_interpolate(prev_point, next_point, target_s)
+    return PathPoint.interpolate_path_point_with_s(prev_point, next_point, target_s)
 
   def get_path_point(self, s):
     if len(self.points) < 2:
@@ -104,7 +104,7 @@ class ReferenceLine:
       
     for i in range(len(self.points)-1):
       if self.points[i].s <= s and s <= self.points[i+1].s:
-          return utils.get_interpolate(self.points[i], self.points[i + 1], s)
+          return PathPoint.interpolate_path_point_with_s(self.points[i], self.points[i + 1], s)
     return ValueError("s is out of range: {}".format(s))
 
   def to_frenet(self, position):
@@ -132,6 +132,19 @@ class ReferenceLine:
   def add_obstacle(self, obstacle):
     self.obstacles[obstacle.id] = obstacle
 
+  def get_sl_boundary(self, corners):
+    start_s = np.finfo(float).max
+    end_s = np.finfo(float).min
+    start_l = np.finfo(float).max
+    end_l = np.finfo(float).min
+    for corner in corners:
+      s, l = self.to_frenet(corner)
+      start_s = min(start_s, s)
+      end_s = max(end_s, s)
+      start_l = min(start_l, l)
+      end_l = max(end_l, l)
+    return geo.SLBoundary(start_s, end_s, start_l, end_l)
+
   @staticmethod
   def combine_path_speed_profile(path, speed_profile, step=0.1):
     trajectory = Trajectory()
@@ -151,6 +164,10 @@ class ReferenceLine:
       trajectory.points.append(traj_point)
       t += step
     return trajectory
+
+def draw_reference_line(ax, ref_line, color='r', linestyle='-.', linewidth=1):
+  ref_points = np.array([(p.position.x, p.position.y) for p in ref_line.points])
+  ax.plot(ref_points[:, 0], ref_points[:, 1], color=color, linestyle=linestyle, linewidth=linewidth)
 
 def test():
   control_points = np.asfortranarray(
