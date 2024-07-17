@@ -2,8 +2,9 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from common.trajectory import PathPoint, TrajectoryPoint, Trajectory
+from common.trajectory import PathPoint, TrajectoryPoint, Trajectory, Path
 import common.geometry as geo
+from common.speed import SpeedProfile
 import utils
 
 class Obstacle:
@@ -52,8 +53,10 @@ def test():
   init_point = PathPoint(position=obs.position, theta=obs.theta)
   target_point = ref_line.get_path_point(80.0)
 
-  obs_path = utils.generate_path(init_point, target_point, offset=2.0)
-  path_points = np.array([(p.position.x, p.position.y) for p in obs_path])
+  obs_path = Path.generate_path(init_point, target_point, offset=2.0)
+  obs_speed = SpeedProfile(obs.v, 0.0)
+  path_points = np.array([(p.position.x, p.position.y) for p in obs_path.points])
+  obs.trajectory = Trajectory.combine_path_speed_profile(obs_path, obs_speed)
   plt.plot(path_points[:, 0], path_points[:, 1])
   points = np.array([(p.position.x, p.position.y) for p in ref_line.points])
   plt.plot(points[:, 0], points[:, 1])
